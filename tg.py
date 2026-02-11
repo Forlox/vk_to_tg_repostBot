@@ -3,6 +3,13 @@ import asyncio
 from aiogram import Bot
 from aiogram.types import FSInputFile, InputMediaPhoto
 import json
+
+TG_TIMINGS = {
+    'DELAY_BETWEEN_REQUESTS': 1,  # Задержка между запросами к API Telegram (сек)
+    'DELAY_BETWEEN_MESSAGES': 1,  # Задержка между отправкой сообщений (сек)
+    'CONNECTION_TIMEOUT': 30,  # Таймаут подключения (сек)
+}
+
 with open('API_KEYS.json', 'r', encoding='utf-8') as f:
     API = json.load(f)
 
@@ -48,16 +55,22 @@ async def post(folder_path):
                         )
                     )
 
+            await asyncio.sleep(TG_TIMINGS['DELAY_BETWEEN_REQUESTS'])
             await bot.send_media_group(
                 chat_id=CHANNEL_ID,
-                media=media_group
+                media=media_group,
+                request_timeout=TG_TIMINGS['CONNECTION_TIMEOUT']
             )
+            await asyncio.sleep(TG_TIMINGS['DELAY_BETWEEN_MESSAGES'])
 
         else:
+            await asyncio.sleep(TG_TIMINGS['DELAY_BETWEEN_REQUESTS'])
             await bot.send_message(
                 chat_id=CHANNEL_ID,
-                text=caption_text
+                text=caption_text,
+                request_timeout=TG_TIMINGS['CONNECTION_TIMEOUT']
             )
+            await asyncio.sleep(TG_TIMINGS['DELAY_BETWEEN_MESSAGES'])
 
     finally:
         await bot.session.close()

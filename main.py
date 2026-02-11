@@ -2,12 +2,18 @@ import os
 import asyncio
 import json
 import shutil
-from vk import GetPosts
-from tg import post
+from vk import GetPosts, VK_TIMINGS
+from tg import post, TG_TIMINGS
 
 POSTS_DIR = "posts"
 HISTORY_FILE = "history.json"
 MAX_POSTS_TO_PROCESS = 100
+
+MAIN_TIMINGS = {
+    'DELAY_BETWEEN_POSTS': 1,  # Задержка между публикацией постов (сек)
+    'DELAY_BETWEEN_DOWNLOADS': 0.5,  # Задержка между скачиваниями файлов (сек)
+    'DELAY_AFTER_ERROR': 5,  # Задержка после ошибки (сек)
+}
 
 def load_history():
     if os.path.exists(HISTORY_FILE):
@@ -104,6 +110,8 @@ async def publish_posts_directly(posts, vk_parser):
                                 posted_media_files.append(filename)
                                 has_media = True
 
+                            await asyncio.sleep(MAIN_TIMINGS['DELAY_BETWEEN_DOWNLOADS'])
+
                         elif attach['type'] == 'video':
                             video = attach['video']
                             video_link = f"https://vk.com/video{video['owner_id']}_{video['id']}"
@@ -146,13 +154,15 @@ async def publish_posts_directly(posts, vk_parser):
                 save_history(history)
 
                 published_count += 1
-                print(f"📝 Пост {post_data['id']} добавлен в историю")
+
+                await asyncio.sleep(MAIN_TIMINGS['DELAY_BETWEEN_POSTS'])
 
             finally:
                 shutil.rmtree(temp_folder, ignore_errors=True)
 
         except Exception as e:
             print(f"Ошибка при обработке поста {post_data['id']}: {e}")
+            await asyncio.sleep(MAIN_TIMINGS['DELAY_AFTER_ERROR'])
             continue
 
     print(f"\nОпубликовано постов: {published_count}")
