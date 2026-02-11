@@ -16,6 +16,7 @@ MAIN_TIMINGS = {
     'DELAY_AFTER_ERROR': 5,  # Задержка после ошибки (сек)
 }
 
+
 def load_history():
     if os.path.exists(HISTORY_FILE):
         try:
@@ -34,7 +35,8 @@ def save_history(history):
 
 def get_posted_ids():
     history = load_history()
-    return {post["id"] for post in history}
+    # Проверяем только посты, которые успешно опубликованы (posted = True)
+    return {post["id"] for post in history if post.get("posted", False)}
 
 
 def get_new_vk_posts():
@@ -70,6 +72,7 @@ def format_date(timestamp):
         "time": dt.strftime("%H:%M:%S")
     }
 
+
 async def publish_posts_directly(posts, vk_parser):
     if not posts:
         print("Нет постов для публикации")
@@ -80,6 +83,7 @@ async def publish_posts_directly(posts, vk_parser):
 
     published_count = 0
     for post_data in posts:
+        posted_successfully = False
         try:
             print(f"\nПубликую пост {post_data['id']}...")
 
@@ -140,7 +144,6 @@ async def publish_posts_directly(posts, vk_parser):
                             audio_link = f"https://vk.com/audio{audio['owner_id']}_{audio['id']}"
                             media_links.append(audio_link)
 
-                # Сохраняем media ссылки
                 if media_links:
                     media_file = os.path.join(temp_folder, "media")
                     with open(media_file, 'w', encoding='utf-8') as f:
@@ -151,13 +154,14 @@ async def publish_posts_directly(posts, vk_parser):
                 else:
                     await post(temp_folder)
                     print(f"Пост {post_data['id']} отправлен в Telegram")
+                    posted_successfully = True
 
-                # Форматируем дату и время
                 date_time = format_date(post_data['date'])
 
                 history = load_history()
                 history.append({
                     "id": post_data['id'],
+                    "posted": posted_successfully,  # Добавляем параметр posted (True/False)
                     "date": date_time["date"],  # Добавляем дату в формате дд.мм.гггг
                     "time": date_time["time"],  # Добавляем время в формате чч:мм:сс
                     "text": text_content,
@@ -166,7 +170,8 @@ async def publish_posts_directly(posts, vk_parser):
                 })
                 save_history(history)
 
-                published_count += 1
+                if posted_successfully:
+                    published_count += 1
 
                 await asyncio.sleep(MAIN_TIMINGS['DELAY_BETWEEN_POSTS'])
 
@@ -175,6 +180,20 @@ async def publish_posts_directly(posts, vk_parser):
 
         except Exception as e:
             print(f"Ошибка при обработке поста {post_data['id']}: {e}")
+
+            date_time = format_date(post_data['date'])
+            history = load_history()
+            history.append({
+                "id": post_data['id'],
+                "posted": False,
+                "date": date_time["date"],
+                "time": date_time["time"],
+                "text": post_data['text'] if post_data['text'] else "",
+                "media": [],
+                "posted_media": []
+            })
+            save_history(history)
+
             await asyncio.sleep(MAIN_TIMINGS['DELAY_AFTER_ERROR'])
             continue
 
