@@ -1,0 +1,11 @@
+{
+    "vk": {
+        "GROUP_ID": "",
+        "ACCESS_TOKEN": "",
+        "VK_API_VERSION": "5.131"
+    },
+    "tg": {
+        "API_TOKEN": "",
+        "CHANNEL_ID": ""
+    }
+}
