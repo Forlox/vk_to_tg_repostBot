@@ -39,6 +39,19 @@ def get_posted_ids():
     return {post["id"] for post in history if post.get("posted", False)}
 
 
+def update_history(post_id, post_data):
+    history = load_history()
+
+    for i, post in enumerate(history):
+        if post["id"] == post_id:
+            history[i] = post_data
+            break
+    else:
+        history.append(post_data)
+
+    save_history(history)
+
+
 def get_new_vk_posts():
     print("Получение постов с ВК")
 
@@ -158,17 +171,17 @@ async def publish_posts_directly(posts, vk_parser):
 
                 date_time = format_date(post_data['date'])
 
-                history = load_history()
-                history.append({
+                history_entry = {
                     "id": post_data['id'],
-                    "posted": posted_successfully,  # Добавляем параметр posted (True/False)
-                    "date": date_time["date"],  # Добавляем дату в формате дд.мм.гггг
-                    "time": date_time["time"],  # Добавляем время в формате чч:мм:сс
+                    "posted": posted_successfully,
+                    "date": date_time["date"],
+                    "time": date_time["time"],
                     "text": text_content,
                     "media": media_links,
                     "posted_media": posted_media_files
-                })
-                save_history(history)
+                }
+
+                update_history(post_data['id'], history_entry)
 
                 if posted_successfully:
                     published_count += 1
@@ -182,8 +195,8 @@ async def publish_posts_directly(posts, vk_parser):
             print(f"Ошибка при обработке поста {post_data['id']}: {e}")
 
             date_time = format_date(post_data['date'])
-            history = load_history()
-            history.append({
+
+            error_entry = {
                 "id": post_data['id'],
                 "posted": False,
                 "date": date_time["date"],
@@ -191,8 +204,9 @@ async def publish_posts_directly(posts, vk_parser):
                 "text": post_data['text'] if post_data['text'] else "",
                 "media": [],
                 "posted_media": []
-            })
-            save_history(history)
+            }
+
+            update_history(post_data['id'], error_entry)
 
             await asyncio.sleep(MAIN_TIMINGS['DELAY_AFTER_ERROR'])
             continue
