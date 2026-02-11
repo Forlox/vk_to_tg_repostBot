@@ -1,5 +1,8 @@
-В API_KEYS.json нужно ввести API ключи
+!!! Это простой бот, сделаный для друга, мне не нравится его функционал, но развивать особо проект я не собираюсь
+Бот при запуске смотрит последние N постов и постит те, что ещё не постилось в тг (память в history.json)
 
+
+В API_KEYS.json нужно ввести ключи
 
 Для ВК: перейти по https://oauth.vk.com/authorize?client_id=6121396&display=page&redirect_uri=https://oauth.vk.com/blank.html&scope=wall,groups,offline&response_type=token&v=5.131, В адресной строке будет ссылка вида:
 
