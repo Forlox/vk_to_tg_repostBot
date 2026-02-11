@@ -2,8 +2,9 @@ import os
 import asyncio
 import json
 import shutil
-from vk import GetPosts, VK_TIMINGS
-from tg import post, TG_TIMINGS
+from datetime import datetime
+from vk import GetPosts
+from tg import post
 
 POSTS_DIR = "posts"
 HISTORY_FILE = "history.json"
@@ -60,6 +61,14 @@ def get_new_vk_posts():
     print(f"Новых постов для обработки: {len(new_posts)}")
     return new_posts, vk_parser
 
+
+def format_date(timestamp):
+    """Конвертирует timestamp в дату и время"""
+    dt = datetime.fromtimestamp(timestamp)
+    return {
+        "date": dt.strftime("%d.%m.%Y"),
+        "time": dt.strftime("%H:%M:%S")
+    }
 
 async def publish_posts_directly(posts, vk_parser):
     if not posts:
@@ -143,10 +152,14 @@ async def publish_posts_directly(posts, vk_parser):
                     await post(temp_folder)
                     print(f"Пост {post_data['id']} отправлен в Telegram")
 
+                # Форматируем дату и время
+                date_time = format_date(post_data['date'])
+
                 history = load_history()
                 history.append({
                     "id": post_data['id'],
-                    "date": post_data['date'],
+                    "date": date_time["date"],  # Добавляем дату в формате дд.мм.гггг
+                    "time": date_time["time"],  # Добавляем время в формате чч:мм:сс
                     "text": text_content,
                     "media": media_links,
                     "posted_media": posted_media_files
@@ -171,6 +184,7 @@ async def publish_posts_directly(posts, vk_parser):
 async def main():
     new_posts, vk_parser = get_new_vk_posts()
     await publish_posts_directly(new_posts, vk_parser)
+
 
 if __name__ == "__main__":
     asyncio.run(main())
